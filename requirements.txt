@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+requests
+pillow
+numpy
+mediapipe==0.10.14
+opencv-python
+ninja
+accelerate==0.31.0
+diffusers==0.39.0
+tqdm==4.66.4
+transformers==4.46.3
+gradio==4.41.0
+huggingface_hub>=0.34.0,<2.0

@@ -18,16 +18,22 @@ async def perform_tryon(request: TryOnRequest, pipeline_param: Optional[str] = Q
         pipeline_type = pipeline_param or request.pipeline or "mask-free"
         
         # Execute the pipeline orchestrator
-        result_path = run_tryon_pipeline(
+        pipeline_result = run_tryon_pipeline(
             person_image_url=request.personImage,
             outfit_image_url=request.outfitImage,
             pipeline_type=pipeline_type,
             category=request.category
         )
         
-        return {
+        response_data = {
             "status": "success",
-            "result_image_url": result_path
+            "result_image_url": pipeline_result["result_image_url"],
+            "local_path": pipeline_result["local_path"]
         }
+        
+        if pipeline_result.get("cloudinary_upload_error"):
+            response_data["cloudinary_upload_error"] = pipeline_result["cloudinary_upload_error"]
+            
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

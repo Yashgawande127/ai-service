@@ -12,6 +12,35 @@ import requests
 from io import BytesIO
 from PIL import Image
 from huggingface_hub import snapshot_download
+from dotenv import load_dotenv
+import cloudinary
+import cloudinary.uploader
+
+# Load environment variables
+load_dotenv()
+
+# Configure Cloudinary
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+IS_CLOUDINARY_CONFIGURED = False
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    if (CLOUDINARY_CLOUD_NAME != "your_cloud_name" and 
+        CLOUDINARY_API_KEY != "your_api_key" and 
+        CLOUDINARY_API_SECRET != "your_api_secret"):
+        try:
+            cloudinary.config(
+                cloud_name=CLOUDINARY_CLOUD_NAME,
+                api_key=CLOUDINARY_API_KEY,
+                api_secret=CLOUDINARY_API_SECRET,
+                secure=True
+            )
+            IS_CLOUDINARY_CONFIGURED = True
+            print("[Cloudinary] Successfully configured Cloudinary for uploads.")
+        except Exception as e:
+            print(f"[Cloudinary] Configuration error: {e}")
+
 
 # Setup paths
 services_dir = os.path.dirname(os.path.abspath(__file__))
@@ -191,4 +220,35 @@ def run_tryon_pipeline(
     # Save and return path
     result.save(out_path)
     print(f"[Success] Try-on image saved to: {out_path}")
-    return out_path
+    
+    # Upload to Cloudinary
+    cloudinary_url = None
+    upload_error = None
+    
+    if IS_CLOUDINARY_CONFIGURED:
+        try:
+            timestamp = int(time.time())
+            unique_id = uuid.uuid4().hex[:8]
+            public_id = f"{pipeline_type}_{timestamp}_{unique_id}"
+            
+            print(f"[Cloudinary] Uploading to folder 'tryon-results' with public_id: {public_id}")
+            upload_result = cloudinary.uploader.upload(
+                out_path,
+                folder="tryon-results",
+                public_id=public_id,
+                resource_type="image"
+            )
+            cloudinary_url = upload_result.get("secure_url")
+            print(f"[Cloudinary] Upload succeeded. URL: {cloudinary_url}")
+        except Exception as e:
+            upload_error = str(e)
+            print(f"[Cloudinary] Upload failed: {e}")
+    else:
+        upload_error = "Cloudinary is not configured or missing credentials."
+        print(f"[Cloudinary] Skipping upload: {upload_error}")
+        
+    return {
+        "result_image_url": cloudinary_url if cloudinary_url else out_path,
+        "local_path": out_path,
+        "cloudinary_upload_error": upload_error
+    }

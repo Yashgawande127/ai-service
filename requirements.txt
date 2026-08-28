@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-python-dotenv
+python-dotenv==1.2.2
 pydantic
 requests
 pillow
@@ -14,3 +14,4 @@ tqdm==4.66.4
 transformers==4.46.3
 gradio==4.41.0
 huggingface_hub>=0.34.0,<2.0
+cloudinary==1.46.2

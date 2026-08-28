@@ -4,3 +4,7 @@ __pycache__/
 .env
 models/**/*.h5
 models/**/*.pth
+*.safetensors
+*.pth
+*.bin
+*.ckpt
